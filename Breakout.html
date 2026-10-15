@@ -130,6 +130,31 @@
         margin-right: 4px;
       }
 
+      .level-pick {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      select {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 10px;
+        background: #0f172a;
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
       @media (max-width: 580px) {
         .app {
           padding: 16px;
@@ -148,8 +173,19 @@
       <div class="hud">
         <div class="stat">Score<strong id="score">0</strong></div>
         <div class="stat">Lives<strong id="lives">3</strong></div>
+        <div class="stat">Level<strong id="level">1</strong></div>
         <div class="stat">Power-up<strong id="powerup">None</strong></div>
         <div class="controls">
+          <label class="level-pick">
+            Start at
+            <select id="levelSelect" aria-label="Starting level">
+              <option value="1">Level 1</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+              <option value="4">Level 4</option>
+              <option value="5">Level 5</option>
+            </select>
+          </label>
           <button id="startBtn" type="button">Start / Restart</button>
         </div>
       </div>
@@ -161,6 +197,7 @@
         <span><b style="background:#38bdf8">S</b>Slow ball</span>
         <span><b style="background:#f472b6">+</b>Extra life</span>
       </div>
+      <p class="hint">Pick a level, then press Start. Clear every brick to advance. Higher levels add a row and speed up the ball.</p>
     </main>
 
     <script>
@@ -168,9 +205,11 @@
       const ctx = canvas.getContext('2d');
       const scoreEl = document.getElementById('score');
       const livesEl = document.getElementById('lives');
+      const levelEl = document.getElementById('level');
       const powerupEl = document.getElementById('powerup');
       const messageEl = document.getElementById('message');
       const startBtn = document.getElementById('startBtn');
+      const levelSelect = document.getElementById('levelSelect');
 
       const keys = {
         left: false,
@@ -198,7 +237,6 @@
       };
 
       const brickConfig = {
-        rows: 5,
         cols: 8,
         width: 82,
         height: 24,
@@ -206,6 +244,11 @@
         offsetTop: 50,
         offsetLeft: 40,
       };
+
+      const BASE_ROWS = 5;
+      const MAX_ROWS = 9;
+      const MAX_LEVEL = 5;
+      const BASE_SPEED = 4;
 
       // ---------- Power-up settings ----------
       const POWERUP_DROP_CHANCE = 0.18; // chance a broken brick drops a power-up
@@ -221,9 +264,18 @@
       let bricks = [];
       let score = 0;
       let lives = 3;
+      let level = 1;
       let gameRunning = false;
       let gameOver = false;
       let animationId = null;
+
+      function rowCountFor(currentLevel) {
+        return Math.min(BASE_ROWS + (currentLevel - 1), MAX_ROWS);
+      }
+
+      function launchSpeedFor(currentLevel) {
+        return Math.min(BASE_SPEED + (currentLevel - 1) * 0.7, 8);
+      }
 
       function setMessage(text) {
         messageEl.textContent = text;
@@ -231,7 +283,9 @@
 
       function buildBricks() {
         bricks = [];
-        for (let row = 0; row < brickConfig.rows; row += 1) {
+        const rows = rowCountFor(level);
+        const colors = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185', '#22d3ee', '#facc15'];
+        for (let row = 0; row < rows; row += 1) {
           for (let col = 0; col < brickConfig.cols; col += 1) {
             bricks.push({
               x: brickConfig.offsetLeft + col * (brickConfig.width + brickConfig.padding),
@@ -239,7 +293,7 @@
               width: brickConfig.width,
               height: brickConfig.height,
               alive: true,
-              color: ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa'][row % 5],
+              color: colors[row % colors.length],
             });
           }
         }
@@ -248,6 +302,7 @@
       function updateHud() {
         scoreEl.textContent = String(score);
         livesEl.textContent = String(lives);
+        levelEl.textContent = String(level);
         updatePowerupHud();
       }
 
@@ -264,10 +319,11 @@
       }
 
       function resetBall() {
+        const speed = launchSpeedFor(level);
         ball.x = paddle.x + paddle.width / 2;
         ball.y = paddle.y - ball.radius - 2;
-        ball.vx = (Math.random() * 2 - 1) * 4;
-        ball.vy = -4;
+        ball.vx = (Math.random() * 2 - 1) * speed;
+        ball.vy = -speed;
         ball.stuck = true;
       }
 
@@ -280,6 +336,7 @@
       function resetGame() {
         score = 0;
         lives = 3;
+        level = Number(levelSelect.value) || 1;
         gameOver = false;
         gameRunning = false;
         buildBricks();
@@ -287,8 +344,27 @@
         paddle.x = canvas.width / 2 - paddle.width / 2;
         resetBall();
         updateHud();
-        setMessage('Press Start or Space to begin.');
+        setMessage(`Level ${level}. Press Start or Space to begin.`);
         draw();
+      }
+
+      function advanceLevel() {
+        if (level >= MAX_LEVEL) {
+          gameRunning = false;
+          gameOver = true;
+          levelSelect.value = '1';
+          updateHud();
+          setMessage('You cleared all 5 levels! Press Start to play again from level 1.');
+          return;
+        }
+
+        level += 1;
+        levelSelect.value = String(level);
+        clearPowerUps();
+        buildBricks();
+        resetBall();
+        updateHud();
+        setMessage(`Level ${level}! ${rowCountFor(level)} rows and a faster ball. Press Space to launch.`);
       }
 
       function startGame() {
@@ -313,12 +389,8 @@
           return;
         }
 
-        setMessage('Life lost! Press Space to continue.');
-        ball.stuck = true;
-        ball.x = paddle.x + paddle.width / 2;
-        ball.y = paddle.y - ball.radius - 2;
-        ball.vx = (Math.random() * 2 - 1) * 4;
-        ball.vy = -4;
+        setMessage(`Life lost on level ${level}. Press Space to continue.`);
+        resetBall();
       }
 
       // ---------- Power-up logic ----------
@@ -433,7 +505,7 @@
             ball.vy > 0) {
           const relativeImpact = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
           const bounceAngle = relativeImpact * 1.1;
-          ball.vx = 5 * bounceAngle;
+          ball.vx = Math.max(5, launchSpeedFor(level)) * bounceAngle;
           ball.vy = -Math.abs(ball.vy) - 0.2;
         }
 
@@ -454,9 +526,7 @@
             maybeDropPowerUp(brick);
 
             if (bricks.every((item) => !item.alive)) {
-              gameRunning = false;
-              gameOver = true;
-              setMessage('You win! Press Start to play again.');
+              advanceLevel();
             }
             break;
           }
@@ -574,6 +644,14 @@
           resetGame();
         }
         startGame();
+      });
+
+      levelSelect.addEventListener('change', () => {
+        if (gameRunning) {
+          setMessage(`Level ${levelSelect.value} will apply when you press Start / Restart.`);
+          return;
+        }
+        resetGame();
       });
 
       resetGame();
