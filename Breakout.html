@@ -6,6 +6,7 @@
     <title>Breakout</title>
     <style>
       :root {
+        color-scheme: dark;
         --bg: #0f172a;
         --panel: #111827;
         --panel-2: #1f2937;
@@ -16,6 +17,30 @@
         --danger: #f87171;
         --warning: #fbbf24;
         --shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
+        --page-background: radial-gradient(circle at top, #172554 0%, var(--bg) 40%, #020817 100%);
+        --app-background: rgba(17, 24, 39, 0.9);
+        --hud-background: rgba(31, 41, 55, 0.9);
+        --canvas-background: linear-gradient(180deg, #0b1120 0%, #111827 100%);
+        --border-color: rgba(148, 163, 184, 0.25);
+      }
+
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --bg: #e2e8f0;
+        --panel: #ffffff;
+        --panel-2: #f1f5f9;
+        --text: #0f172a;
+        --muted: #334155;
+        --accent: #0284c7;
+        --accent-2: #059669;
+        --danger: #dc2626;
+        --warning: #d97706;
+        --shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        --page-background: radial-gradient(circle at top, #ffffff 0%, #e2e8f0 55%, #cbd5e1 100%);
+        --app-background: rgba(255, 255, 255, 0.94);
+        --hud-background: #f1f5f9;
+        --canvas-background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        --border-color: rgba(51, 65, 85, 0.25);
       }
 
       * {
@@ -27,15 +52,15 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
-        background: radial-gradient(circle at top, #172554 0%, var(--bg) 40%, #020817 100%);
+        background: var(--page-background);
         font-family: Arial, Helvetica, sans-serif;
         color: var(--text);
       }
 
       .app {
         width: min(92vw, 900px);
-        background: rgba(17, 24, 39, 0.9);
-        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: var(--app-background);
+        border: 1px solid var(--border-color);
         border-radius: 24px;
         padding: 22px;
         box-shadow: var(--shadow);
@@ -55,9 +80,9 @@
         flex-wrap: wrap;
         margin-bottom: 16px;
         padding: 10px 14px;
-        background: rgba(31, 41, 55, 0.9);
+        background: var(--hud-background);
         border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        border: 1px solid var(--border-color);
       }
 
       .stat {
@@ -68,33 +93,6 @@
       .stat strong {
         color: var(--text);
         margin-left: 8px;
-      }
-
-      .mode-picker {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--muted);
-        font-weight: 700;
-      }
-
-      select {
-        border: 1px solid rgba(148, 163, 184, 0.35);
-        border-radius: 8px;
-        background: var(--panel);
-        color: var(--text);
-        padding: 8px;
-        font: inherit;
-      }
-
-      .player-stats {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      .player-two {
-        display: none;
       }
 
       .controls {
@@ -124,9 +122,9 @@
         display: block;
         width: 100%;
         height: auto;
-        background: linear-gradient(180deg, #0b1120 0%, #111827 100%);
+        background: var(--canvas-background);
         border-radius: 18px;
-        border: 2px solid rgba(148, 163, 184, 0.25);
+        border: 2px solid var(--border-color);
       }
 
       .message {
@@ -135,6 +133,51 @@
         color: var(--muted);
         font-weight: 700;
         min-height: 24px;
+      }
+
+      .legend {
+        margin-top: 8px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .legend span {
+        display: inline-block;
+        margin: 0 8px;
+      }
+
+      .legend b {
+        display: inline-block;
+        width: 22px;
+        border-radius: 6px;
+        color: #0f172a;
+        margin-right: 4px;
+      }
+
+      .level-pick {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      select {
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        border-radius: 10px;
+        background: var(--panel);
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .hint {
+        margin: 8px 0 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
       }
 
       @media (max-width: 580px) {
@@ -153,147 +196,212 @@
       <h1>Breakout</h1>
 
       <div class="hud">
-        <label class="mode-picker" for="modeSelect">
-          Mode
-          <select id="modeSelect">
-            <option value="one">1 Player</option>
-            <option value="two">2 Players (Versus)</option>
-          </select>
-        </label>
-        <div class="player-stats">
-          <div class="stat">P1 Score<strong id="score1">0</strong></div>
-          <div class="stat">P1 Lives<strong id="lives1">3</strong></div>
-          <div class="stat player-two" id="playerTwoScore">P2 Score<strong id="score2">0</strong></div>
-          <div class="stat player-two" id="playerTwoLives">P2 Lives<strong id="lives2">3</strong></div>
-        </div>
+        <div class="stat">Score<strong id="score">0</strong></div>
+        <div class="stat">Lives<strong id="lives">3</strong></div>
+        <div class="stat">Level<strong id="level">1</strong></div>
+        <div class="stat">Power-up<strong id="powerup">None</strong></div>
         <div class="controls">
+          <label class="level-pick" for="themeSelect">
+            Theme
+            <select id="themeSelect" aria-label="Theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
+          <label class="level-pick">
+            Start at
+            <select id="levelSelect" aria-label="Starting level">
+              <option value="1">Level 1</option>
+              <option value="2">Level 2</option>
+              <option value="3">Level 3</option>
+              <option value="4">Level 4</option>
+              <option value="5">Level 5</option>
+            </select>
+          </label>
           <button id="startBtn" type="button">Start / Restart</button>
         </div>
       </div>
 
       <canvas id="gameCanvas" width="800" height="520" aria-label="Breakout game board"></canvas>
-      <div id="message" class="message">P1: A/D or arrow keys. Press Start or Space to begin.</div>
+      <div id="message" class="message">Press Start or Space to begin.</div>
+      <div class="legend">
+        <span><b style="background:#34d399">W</b>Wide paddle</span>
+        <span><b style="background:#38bdf8">S</b>Slow ball</span>
+        <span><b style="background:#f472b6">+</b>Extra life</span>
+      </div>
+      <p class="hint">Pick a level, then press Start. Clear every brick to advance. Higher levels add a row and speed up the ball.</p>
     </main>
 
     <script>
       const canvas = document.getElementById('gameCanvas');
       const ctx = canvas.getContext('2d');
-      const scoreEls = [document.getElementById('score1'), document.getElementById('score2')];
-      const livesEls = [document.getElementById('lives1'), document.getElementById('lives2')];
+      const scoreEl = document.getElementById('score');
+      const livesEl = document.getElementById('lives');
+      const levelEl = document.getElementById('level');
+      const powerupEl = document.getElementById('powerup');
       const messageEl = document.getElementById('message');
       const startBtn = document.getElementById('startBtn');
-      const modeSelect = document.getElementById('modeSelect');
-      const playerTwoStats = [
-        document.getElementById('playerTwoScore'),
-        document.getElementById('playerTwoLives'),
-      ];
+      const levelSelect = document.getElementById('levelSelect');
+      const themeSelect = document.getElementById('themeSelect');
 
-      const keys = [
-        { left: false, right: false },
-        { left: false, right: false },
-      ];
+      const keys = {
+        left: false,
+        right: false,
+      };
 
-      const brickColors = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa'];
-      let players = [];
-      let gameMode = 'one';
+      const BASE_PADDLE_WIDTH = 150;
+      const WIDE_PADDLE_WIDTH = 230;
+
+      const paddle = {
+        width: BASE_PADDLE_WIDTH,
+        height: 16,
+        x: canvas.width / 2 - BASE_PADDLE_WIDTH / 2,
+        y: canvas.height - 28,
+        speed: 8,
+      };
+
+      const ball = {
+        radius: 10,
+        x: canvas.width / 2,
+        y: canvas.height - 40,
+        vx: 4,
+        vy: -4,
+        stuck: true,
+      };
+
+      const brickConfig = {
+        cols: 8,
+        width: 82,
+        height: 24,
+        padding: 10,
+        offsetTop: 50,
+        offsetLeft: 40,
+      };
+
+      const BASE_ROWS = 5;
+      const MAX_ROWS = 9;
+      const MAX_LEVEL = 5;
+      const BASE_SPEED = 4;
+
+      // ---------- Power-up settings ----------
+      const POWERUP_DROP_CHANCE = 0.18; // chance a broken brick drops a power-up
+      const POWERUP_TYPES = {
+        wide: { label: 'W', color: '#34d399', name: 'Wide paddle', duration: 10000 },
+        slow: { label: 'S', color: '#38bdf8', name: 'Slow ball', duration: 8000 },
+        life: { label: '+', color: '#f472b6', name: 'Extra life', duration: 0 },
+      };
+
+      let powerUps = []; // capsules currently falling
+      let effects = { wideUntil: 0, slowUntil: 0 }; // when timed effects end
+
+      let bricks = [];
+      let score = 0;
+      let lives = 3;
+      let level = 1;
       let gameRunning = false;
       let gameOver = false;
       let animationId = null;
+
+      function rowCountFor(currentLevel) {
+        return Math.min(BASE_ROWS + (currentLevel - 1), MAX_ROWS);
+      }
+
+      function launchSpeedFor(currentLevel) {
+        return Math.min(BASE_SPEED + (currentLevel - 1) * 0.7, 8);
+      }
 
       function setMessage(text) {
         messageEl.textContent = text;
       }
 
-      function createPlayer(index, boardX, boardWidth, cols, brickWidth, brickPadding) {
-        const brickHeight = 24;
-        const brickStart = gameMode === 'one'
-          ? 40
-          : (boardWidth - (cols * brickWidth + (cols - 1) * brickPadding)) / 2;
-        const bricks = [];
+      function applyTheme() {
+        document.documentElement.dataset.theme = themeSelect.value;
+      }
 
-        for (let row = 0; row < 5; row += 1) {
-          for (let col = 0; col < cols; col += 1) {
+      function buildBricks() {
+        bricks = [];
+        const rows = rowCountFor(level);
+        const colors = ['#38bdf8', '#34d399', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185', '#22d3ee', '#facc15'];
+        for (let row = 0; row < rows; row += 1) {
+          for (let col = 0; col < brickConfig.cols; col += 1) {
             bricks.push({
-              x: brickStart + col * (brickWidth + brickPadding),
-              y: 50 + row * (brickHeight + 10),
-              width: brickWidth,
-              height: brickHeight,
+              x: brickConfig.offsetLeft + col * (brickConfig.width + brickConfig.padding),
+              y: brickConfig.offsetTop + row * (brickConfig.height + brickConfig.padding),
+              width: brickConfig.width,
+              height: brickConfig.height,
               alive: true,
-              color: brickColors[row],
+              color: colors[row % colors.length],
             });
           }
         }
-
-        const paddle = {
-          width: gameMode === 'one' ? 150 : 120,
-          height: 16,
-          x: boardWidth / 2 - (gameMode === 'one' ? 150 : 120) / 2,
-          y: canvas.height - 28,
-          speed: 8,
-        };
-
-        return {
-          index,
-          name: `Player ${index + 1}`,
-          boardX,
-          boardWidth,
-          paddle,
-          ball: {
-            radius: 10,
-            x: boardWidth / 2,
-            y: canvas.height - 40,
-            vx: 4,
-            vy: -4,
-            stuck: true,
-          },
-          bricks,
-          score: 0,
-          lives: 3,
-        };
       }
 
       function updateHud() {
-        players.forEach((player) => {
-          scoreEls[player.index].textContent = String(player.score);
-          livesEls[player.index].textContent = String(player.lives);
-        });
+        scoreEl.textContent = String(score);
+        livesEl.textContent = String(lives);
+        levelEl.textContent = String(level);
+        updatePowerupHud();
       }
 
-      function resetBall(player) {
-        player.ball.x = player.paddle.x + player.paddle.width / 2;
-        player.ball.y = player.paddle.y - player.ball.radius - 2;
-        player.ball.vx = (Math.random() * 2 - 1) * 4;
-        player.ball.vy = -4;
-        player.ball.stuck = true;
+      function updatePowerupHud() {
+        const now = performance.now();
+        const active = [];
+        if (effects.wideUntil > now) {
+          active.push(`Wide ${Math.ceil((effects.wideUntil - now) / 1000)}s`);
+        }
+        if (effects.slowUntil > now) {
+          active.push(`Slow ${Math.ceil((effects.slowUntil - now) / 1000)}s`);
+        }
+        powerupEl.textContent = active.length ? active.join(', ') : 'None';
+      }
+
+      function resetBall() {
+        const speed = launchSpeedFor(level);
+        ball.x = paddle.x + paddle.width / 2;
+        ball.y = paddle.y - ball.radius - 2;
+        ball.vx = (Math.random() * 2 - 1) * speed;
+        ball.vy = -speed;
+        ball.stuck = true;
+      }
+
+      function clearPowerUps() {
+        powerUps = [];
+        effects = { wideUntil: 0, slowUntil: 0 };
+        setPaddleWidth(BASE_PADDLE_WIDTH);
       }
 
       function resetGame() {
-        gameMode = modeSelect.value;
-        const isTwoPlayer = gameMode === 'two';
-        playerTwoStats.forEach((stat) => {
-          stat.style.display = isTwoPlayer ? 'block' : 'none';
-        });
-        canvas.setAttribute(
-          'aria-label',
-          isTwoPlayer ? 'Two-player Breakout game board' : 'Breakout game board'
-        );
-        players = isTwoPlayer
-          ? [
-              createPlayer(0, 0, canvas.width / 2, 4, 70, 8),
-              createPlayer(1, canvas.width / 2, canvas.width / 2, 4, 70, 8),
-            ]
-          : [createPlayer(0, 0, canvas.width, 8, 82, 10)];
-        keys.forEach((playerKeys) => {
-          playerKeys.left = false;
-          playerKeys.right = false;
-        });
+        score = 0;
+        lives = 3;
+        level = Number(levelSelect.value) || 1;
         gameOver = false;
         gameRunning = false;
+        buildBricks();
+        clearPowerUps();
+        paddle.x = canvas.width / 2 - paddle.width / 2;
+        resetBall();
         updateHud();
-        setMessage(isTwoPlayer
-          ? 'P1: A/D. P2: Left/Right arrows. First to clear their board or outlast the other wins.'
-          : 'P1: A/D or arrow keys. Press Start or Space to begin.');
+        setMessage(`Level ${level}. Press Start or Space to begin.`);
         draw();
+      }
+
+      function advanceLevel() {
+        if (level >= MAX_LEVEL) {
+          gameRunning = false;
+          gameOver = true;
+          levelSelect.value = '1';
+          updateHud();
+          setMessage('You cleared all 5 levels! Press Start to play again from level 1.');
+          return;
+        }
+
+        level += 1;
+        levelSelect.value = String(level);
+        clearPowerUps();
+        buildBricks();
+        resetBall();
+        updateHud();
+        setMessage(`Level ${level}! ${rowCountFor(level)} rows and a faster ball. Press Space to launch.`);
       }
 
       function startGame() {
@@ -302,45 +410,112 @@
         }
 
         gameRunning = true;
-        players.forEach((player) => {
-          player.ball.stuck = false;
-        });
-        setMessage(gameMode === 'two' ? 'Versus match on!' : 'Game on!');
+        ball.stuck = false;
+        setMessage('Game on!');
       }
 
-      function finishMatch(winnerMessage) {
-        gameOver = true;
-        gameRunning = false;
-        setMessage(winnerMessage);
-      }
-
-      function loseLife(player) {
-        player.lives -= 1;
+      function loseLife() {
+        lives -= 1;
+        powerUps = []; // falling capsules disappear when a life is lost
         updateHud();
 
-        if (player.lives <= 0) {
-          const otherPlayer = players.find((item) => item !== player);
-          finishMatch(otherPlayer
-            ? `${otherPlayer.name} wins! Press Start to play again.`
-            : 'Game over! Press Start to try again.');
+        if (lives <= 0) {
+          gameOver = true;
+          gameRunning = false;
+          setMessage('Game over! Press Start to try again.');
           return;
         }
 
-        setMessage(`${player.name} lost a life! Press Space to continue.`);
-        resetBall(player);
+        setMessage(`Life lost on level ${level}. Press Space to continue.`);
+        resetBall();
       }
 
-      function updatePlayer(player) {
-        const playerKeys = keys[player.index];
-        const { paddle, ball } = player;
+      // ---------- Power-up logic ----------
+      function setPaddleWidth(newWidth) {
+        const center = paddle.x + paddle.width / 2;
+        paddle.width = newWidth;
+        paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, center - paddle.width / 2));
+      }
 
-        if (playerKeys.left && paddle.x > 0) {
+      function maybeDropPowerUp(brick) {
+        if (Math.random() > POWERUP_DROP_CHANCE) return;
+        const types = Object.keys(POWERUP_TYPES);
+        const type = types[Math.floor(Math.random() * types.length)];
+        powerUps.push({
+          type,
+          x: brick.x + brick.width / 2,
+          y: brick.y + brick.height / 2,
+          width: 34,
+          height: 18,
+          vy: 2.5,
+        });
+      }
+
+      function applyPowerUp(type) {
+        const now = performance.now();
+        const info = POWERUP_TYPES[type];
+
+        if (type === 'wide') {
+          effects.wideUntil = now + info.duration;
+          setPaddleWidth(WIDE_PADDLE_WIDTH);
+        } else if (type === 'slow') {
+          effects.slowUntil = now + info.duration;
+        } else if (type === 'life') {
+          lives += 1;
+        }
+
+        setMessage(`Power-up: ${info.name}!`);
+        updateHud();
+      }
+
+      function updatePowerUps() {
+        const now = performance.now();
+
+        // Move falling capsules and check if the paddle catches them
+        for (const p of powerUps) {
+          p.y += p.vy;
+          const caught =
+            p.y + p.height / 2 >= paddle.y &&
+            p.y - p.height / 2 <= paddle.y + paddle.height &&
+            p.x + p.width / 2 >= paddle.x &&
+            p.x - p.width / 2 <= paddle.x + paddle.width;
+          if (caught) {
+            applyPowerUp(p.type);
+            p.done = true;
+          } else if (p.y - p.height / 2 > canvas.height) {
+            p.done = true;
+          }
+        }
+        powerUps = powerUps.filter((p) => !p.done);
+
+        // Expire the wide paddle when its timer runs out
+        if (effects.wideUntil && now >= effects.wideUntil) {
+          effects.wideUntil = 0;
+          setPaddleWidth(BASE_PADDLE_WIDTH);
+        }
+        if (effects.slowUntil && now >= effects.slowUntil) {
+          effects.slowUntil = 0;
+        }
+
+        updatePowerupHud();
+      }
+
+      function ballSpeedMultiplier() {
+        return effects.slowUntil > performance.now() ? 0.6 : 1;
+      }
+
+      function update() {
+        if (!gameRunning) return;
+
+        if (keys.left && paddle.x > 0) {
           paddle.x = Math.max(0, paddle.x - paddle.speed);
         }
 
-        if (playerKeys.right && paddle.x + paddle.width < player.boardWidth) {
-          paddle.x = Math.min(player.boardWidth - paddle.width, paddle.x + paddle.speed);
+        if (keys.right && paddle.x + paddle.width < canvas.width) {
+          paddle.x = Math.min(canvas.width - paddle.width, paddle.x + paddle.speed);
         }
+
+        updatePowerUps();
 
         if (ball.stuck) {
           ball.x = paddle.x + paddle.width / 2;
@@ -348,10 +523,11 @@
           return;
         }
 
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+        const speedMult = ballSpeedMultiplier();
+        ball.x += ball.vx * speedMult;
+        ball.y += ball.vy * speedMult;
 
-        if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= player.boardWidth) {
+        if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) {
           ball.vx *= -1;
         }
 
@@ -366,11 +542,11 @@
             ball.vy > 0) {
           const relativeImpact = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
           const bounceAngle = relativeImpact * 1.1;
-          ball.vx = 5 * bounceAngle;
+          ball.vx = Math.max(5, launchSpeedFor(level)) * bounceAngle;
           ball.vy = -Math.abs(ball.vy) - 0.2;
         }
 
-        for (const brick of player.bricks) {
+        for (const brick of bricks) {
           if (!brick.alive) continue;
 
           const hit =
@@ -381,138 +557,124 @@
 
           if (hit) {
             brick.alive = false;
-            player.score += 10;
+            score += 10;
             updateHud();
             ball.vy *= -1;
+            maybeDropPowerUp(brick);
 
-            if (player.bricks.every((item) => !item.alive)) {
-              finishMatch(gameMode === 'two'
-                ? `${player.name} cleared their board and wins! Press Start to play again.`
-                : 'You win! Press Start to play again.');
+            if (bricks.every((item) => !item.alive)) {
+              advanceLevel();
             }
             break;
           }
         }
 
         if (ball.y - ball.radius > canvas.height) {
-          loseLife(player);
+          loseLife();
         }
       }
 
-      function drawPlayer(player) {
-        ctx.save();
-        ctx.translate(player.boardX, 0);
-        for (const brick of player.bricks) {
+      function drawBricks() {
+        for (const brick of bricks) {
           if (!brick.alive) continue;
           ctx.fillStyle = brick.color;
           ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
           ctx.strokeStyle = 'rgba(255,255,255,0.2)';
           ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
         }
-        ctx.fillStyle = '#f8fafc';
-        ctx.fillRect(player.paddle.x, player.paddle.y, player.paddle.width, player.paddle.height);
-        ctx.fillStyle = '#fbbf24';
+      }
+
+      function drawPaddle() {
+        // Paddle glows green while the wide power-up is active
+        ctx.fillStyle = effects.wideUntil > performance.now() ? '#34d399' : '#f8fafc';
+        ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
+      }
+
+      function drawBall() {
+        // Ball turns blue while the slow power-up is active
+        ctx.fillStyle = effects.slowUntil > performance.now() ? '#38bdf8' : '#fbbf24';
         ctx.beginPath();
-        ctx.arc(player.ball.x, player.ball.y, player.ball.radius, 0, Math.PI * 2);
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
+      }
+
+      function drawPowerUps() {
+        for (const p of powerUps) {
+          const info = POWERUP_TYPES[p.type];
+          const left = p.x - p.width / 2;
+          const top = p.y - p.height / 2;
+          const r = p.height / 2;
+
+          ctx.fillStyle = info.color;
+          ctx.beginPath();
+          ctx.moveTo(left + r, top);
+          ctx.arcTo(left + p.width, top, left + p.width, top + p.height, r);
+          ctx.arcTo(left + p.width, top + p.height, left, top + p.height, r);
+          ctx.arcTo(left, top + p.height, left, top, r);
+          ctx.arcTo(left, top, left + p.width, top, r);
+          ctx.fill();
+
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 13px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(info.label, p.x, p.y + 1);
+        }
       }
 
       function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.fillStyle = 'rgba(148, 163, 184, 0.15)';
-        for (const player of players) {
-          for (let i = player.boardX; i < player.boardX + player.boardWidth; i += 18) {
-            ctx.fillRect(i, 0, 2, canvas.height);
-          }
-          drawPlayer(player);
+        for (let i = 0; i < canvas.width; i += 18) {
+          ctx.fillRect(i, 0, 2, canvas.height);
         }
 
-        if (gameMode === 'two') {
-          ctx.strokeStyle = 'rgba(248, 250, 252, 0.6)';
-          ctx.setLineDash([8, 8]);
-          ctx.beginPath();
-          ctx.moveTo(canvas.width / 2, 0);
-          ctx.lineTo(canvas.width / 2, canvas.height);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
+        drawBricks();
+        drawPowerUps();
+        drawPaddle();
+        drawBall();
       }
 
       function gameLoop() {
-        if (gameRunning) {
-          for (const player of players) {
-            if (!gameRunning) break;
-            updatePlayer(player);
-          }
-        }
+        update();
         draw();
         animationId = requestAnimationFrame(gameLoop);
       }
 
       document.addEventListener('keydown', (event) => {
-        const key = event.key.toLowerCase();
-        const p1Keys = keys[0];
-        const p2Keys = keys[1];
+        if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
+          keys.left = true;
+        }
 
-        if (key === 'a') {
-          p1Keys.left = true;
-        }
-        if (key === 'd') {
-          p1Keys.right = true;
-        }
-        if (event.key === 'ArrowLeft') {
-          if (gameMode === 'two') {
-            p2Keys.left = true;
-          } else {
-            p1Keys.left = true;
-          }
-          event.preventDefault();
-        }
-        if (event.key === 'ArrowRight') {
-          if (gameMode === 'two') {
-            p2Keys.right = true;
-          } else {
-            p1Keys.right = true;
-          }
-          event.preventDefault();
+        if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
+          keys.right = true;
         }
 
         if (event.code === 'Space') {
           event.preventDefault();
           if (!gameRunning && !gameOver) {
             startGame();
-          } else if (players.some((player) => player.ball.stuck) && !gameOver) {
-            players.forEach((player) => {
-              player.ball.stuck = false;
-            });
+          } else if (ball.stuck && !gameOver) {
+            ball.stuck = false;
             setMessage('Game on!');
           }
         }
 
-        if (key === 'r') {
+        if (event.key.toLowerCase() === 'r') {
           resetGame();
         }
       });
 
       document.addEventListener('keyup', (event) => {
-        const key = event.key.toLowerCase();
-        if (key === 'a') {
-          keys[0].left = false;
+        if (event.key === 'ArrowLeft' || event.key.toLowerCase() === 'a') {
+          keys.left = false;
         }
-        if (key === 'd') {
-          keys[0].right = false;
-        }
-        if (event.key === 'ArrowLeft') {
-          keys[gameMode === 'two' ? 1 : 0].left = false;
-        }
-        if (event.key === 'ArrowRight') {
-          keys[gameMode === 'two' ? 1 : 0].right = false;
+
+        if (event.key === 'ArrowRight' || event.key.toLowerCase() === 'd') {
+          keys.right = false;
         }
       });
-
-      modeSelect.addEventListener('change', resetGame);
 
       startBtn.addEventListener('click', () => {
         if (gameRunning) {
@@ -521,10 +683,19 @@
         startGame();
       });
 
+      levelSelect.addEventListener('change', () => {
+        if (gameRunning) {
+          setMessage(`Level ${levelSelect.value} will apply when you press Start / Restart.`);
+          return;
+        }
+        resetGame();
+      });
+
+      themeSelect.addEventListener('change', applyTheme);
+
+      applyTheme();
       resetGame();
-      if (animationId === null) {
-        gameLoop();
-      }
+      gameLoop();
     </script>
   </body>
 </html>
