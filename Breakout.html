@@ -6,6 +6,7 @@
     <title>Breakout</title>
     <style>
       :root {
+        color-scheme: dark;
         --bg: #0f172a;
         --panel: #111827;
         --panel-2: #1f2937;
@@ -16,6 +17,30 @@
         --danger: #f87171;
         --warning: #fbbf24;
         --shadow: 0 20px 40px rgba(15, 23, 42, 0.4);
+        --page-background: radial-gradient(circle at top, #172554 0%, var(--bg) 40%, #020817 100%);
+        --app-background: rgba(17, 24, 39, 0.9);
+        --hud-background: rgba(31, 41, 55, 0.9);
+        --canvas-background: linear-gradient(180deg, #0b1120 0%, #111827 100%);
+        --border-color: rgba(148, 163, 184, 0.25);
+      }
+
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --bg: #e2e8f0;
+        --panel: #ffffff;
+        --panel-2: #f1f5f9;
+        --text: #0f172a;
+        --muted: #334155;
+        --accent: #0284c7;
+        --accent-2: #059669;
+        --danger: #dc2626;
+        --warning: #d97706;
+        --shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        --page-background: radial-gradient(circle at top, #ffffff 0%, #e2e8f0 55%, #cbd5e1 100%);
+        --app-background: rgba(255, 255, 255, 0.94);
+        --hud-background: #f1f5f9;
+        --canvas-background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+        --border-color: rgba(51, 65, 85, 0.25);
       }
 
       * {
@@ -27,15 +52,15 @@
         min-height: 100vh;
         display: grid;
         place-items: center;
-        background: radial-gradient(circle at top, #172554 0%, var(--bg) 40%, #020817 100%);
+        background: var(--page-background);
         font-family: Arial, Helvetica, sans-serif;
         color: var(--text);
       }
 
       .app {
         width: min(92vw, 900px);
-        background: rgba(17, 24, 39, 0.9);
-        border: 1px solid rgba(148, 163, 184, 0.25);
+        background: var(--app-background);
+        border: 1px solid var(--border-color);
         border-radius: 24px;
         padding: 22px;
         box-shadow: var(--shadow);
@@ -55,9 +80,9 @@
         flex-wrap: wrap;
         margin-bottom: 16px;
         padding: 10px 14px;
-        background: rgba(31, 41, 55, 0.9);
+        background: var(--hud-background);
         border-radius: 12px;
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        border: 1px solid var(--border-color);
       }
 
       .stat {
@@ -97,9 +122,9 @@
         display: block;
         width: 100%;
         height: auto;
-        background: linear-gradient(180deg, #0b1120 0%, #111827 100%);
+        background: var(--canvas-background);
         border-radius: 18px;
-        border: 2px solid rgba(148, 163, 184, 0.25);
+        border: 2px solid var(--border-color);
       }
 
       .message {
@@ -141,7 +166,7 @@
       select {
         border: 1px solid rgba(148, 163, 184, 0.35);
         border-radius: 10px;
-        background: #0f172a;
+        background: var(--panel);
         color: var(--text);
         padding: 10px 12px;
         font-size: 0.9rem;
@@ -176,6 +201,13 @@
         <div class="stat">Level<strong id="level">1</strong></div>
         <div class="stat">Power-up<strong id="powerup">None</strong></div>
         <div class="controls">
+          <label class="level-pick" for="themeSelect">
+            Theme
+            <select id="themeSelect" aria-label="Theme">
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </label>
           <label class="level-pick">
             Start at
             <select id="levelSelect" aria-label="Starting level">
@@ -210,6 +242,7 @@
       const messageEl = document.getElementById('message');
       const startBtn = document.getElementById('startBtn');
       const levelSelect = document.getElementById('levelSelect');
+      const themeSelect = document.getElementById('themeSelect');
 
       const keys = {
         left: false,
@@ -279,6 +312,10 @@
 
       function setMessage(text) {
         messageEl.textContent = text;
+      }
+
+      function applyTheme() {
+        document.documentElement.dataset.theme = themeSelect.value;
       }
 
       function buildBricks() {
@@ -654,6 +691,9 @@
         resetGame();
       });
 
+      themeSelect.addEventListener('change', applyTheme);
+
+      applyTheme();
       resetGame();
       gameLoop();
     </script>
