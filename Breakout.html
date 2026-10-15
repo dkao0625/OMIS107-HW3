@@ -110,6 +110,26 @@
         min-height: 24px;
       }
 
+      .legend {
+        margin-top: 8px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+
+      .legend span {
+        display: inline-block;
+        margin: 0 8px;
+      }
+
+      .legend b {
+        display: inline-block;
+        width: 22px;
+        border-radius: 6px;
+        color: #0f172a;
+        margin-right: 4px;
+      }
+
       @media (max-width: 580px) {
         .app {
           padding: 16px;
@@ -128,6 +148,7 @@
       <div class="hud">
         <div class="stat">Score<strong id="score">0</strong></div>
         <div class="stat">Lives<strong id="lives">3</strong></div>
+        <div class="stat">Power-up<strong id="powerup">None</strong></div>
         <div class="controls">
           <button id="startBtn" type="button">Start / Restart</button>
         </div>
@@ -135,6 +156,11 @@
 
       <canvas id="gameCanvas" width="800" height="520" aria-label="Breakout game board"></canvas>
       <div id="message" class="message">Press Start or Space to begin.</div>
+      <div class="legend">
+        <span><b style="background:#34d399">W</b>Wide paddle</span>
+        <span><b style="background:#38bdf8">S</b>Slow ball</span>
+        <span><b style="background:#f472b6">+</b>Extra life</span>
+      </div>
     </main>
 
     <script>
@@ -142,6 +168,7 @@
       const ctx = canvas.getContext('2d');
       const scoreEl = document.getElementById('score');
       const livesEl = document.getElementById('lives');
+      const powerupEl = document.getElementById('powerup');
       const messageEl = document.getElementById('message');
       const startBtn = document.getElementById('startBtn');
 
@@ -150,10 +177,13 @@
         right: false,
       };
 
+      const BASE_PADDLE_WIDTH = 150;
+      const WIDE_PADDLE_WIDTH = 230;
+
       const paddle = {
-        width: 150,
+        width: BASE_PADDLE_WIDTH,
         height: 16,
-        x: canvas.width / 2 - 75,
+        x: canvas.width / 2 - BASE_PADDLE_WIDTH / 2,
         y: canvas.height - 28,
         speed: 8,
       };
@@ -176,6 +206,17 @@
         offsetTop: 50,
         offsetLeft: 40,
       };
+
+      // ---------- Power-up settings ----------
+      const POWERUP_DROP_CHANCE = 0.18; // chance a broken brick drops a power-up
+      const POWERUP_TYPES = {
+        wide: { label: 'W', color: '#34d399', name: 'Wide paddle', duration: 10000 },
+        slow: { label: 'S', color: '#38bdf8', name: 'Slow ball', duration: 8000 },
+        life: { label: '+', color: '#f472b6', name: 'Extra life', duration: 0 },
+      };
+
+      let powerUps = []; // capsules currently falling
+      let effects = { wideUntil: 0, slowUntil: 0 }; // when timed effects end
 
       let bricks = [];
       let score = 0;
@@ -207,6 +248,19 @@
       function updateHud() {
         scoreEl.textContent = String(score);
         livesEl.textContent = String(lives);
+        updatePowerupHud();
+      }
+
+      function updatePowerupHud() {
+        const now = performance.now();
+        const active = [];
+        if (effects.wideUntil > now) {
+          active.push(`Wide ${Math.ceil((effects.wideUntil - now) / 1000)}s`);
+        }
+        if (effects.slowUntil > now) {
+          active.push(`Slow ${Math.ceil((effects.slowUntil - now) / 1000)}s`);
+        }
+        powerupEl.textContent = active.length ? active.join(', ') : 'None';
       }
 
       function resetBall() {
@@ -217,12 +271,19 @@
         ball.stuck = true;
       }
 
+      function clearPowerUps() {
+        powerUps = [];
+        effects = { wideUntil: 0, slowUntil: 0 };
+        setPaddleWidth(BASE_PADDLE_WIDTH);
+      }
+
       function resetGame() {
         score = 0;
         lives = 3;
         gameOver = false;
         gameRunning = false;
         buildBricks();
+        clearPowerUps();
         paddle.x = canvas.width / 2 - paddle.width / 2;
         resetBall();
         updateHud();
@@ -242,6 +303,7 @@
 
       function loseLife() {
         lives -= 1;
+        powerUps = []; // falling capsules disappear when a life is lost
         updateHud();
 
         if (lives <= 0) {
@@ -259,16 +321,92 @@
         ball.vy = -4;
       }
 
+      // ---------- Power-up logic ----------
+      function setPaddleWidth(newWidth) {
+        const center = paddle.x + paddle.width / 2;
+        paddle.width = newWidth;
+        paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, center - paddle.width / 2));
+      }
+
+      function maybeDropPowerUp(brick) {
+        if (Math.random() > POWERUP_DROP_CHANCE) return;
+        const types = Object.keys(POWERUP_TYPES);
+        const type = types[Math.floor(Math.random() * types.length)];
+        powerUps.push({
+          type,
+          x: brick.x + brick.width / 2,
+          y: brick.y + brick.height / 2,
+          width: 34,
+          height: 18,
+          vy: 2.5,
+        });
+      }
+
+      function applyPowerUp(type) {
+        const now = performance.now();
+        const info = POWERUP_TYPES[type];
+
+        if (type === 'wide') {
+          effects.wideUntil = now + info.duration;
+          setPaddleWidth(WIDE_PADDLE_WIDTH);
+        } else if (type === 'slow') {
+          effects.slowUntil = now + info.duration;
+        } else if (type === 'life') {
+          lives += 1;
+        }
+
+        setMessage(`Power-up: ${info.name}!`);
+        updateHud();
+      }
+
+      function updatePowerUps() {
+        const now = performance.now();
+
+        // Move falling capsules and check if the paddle catches them
+        for (const p of powerUps) {
+          p.y += p.vy;
+          const caught =
+            p.y + p.height / 2 >= paddle.y &&
+            p.y - p.height / 2 <= paddle.y + paddle.height &&
+            p.x + p.width / 2 >= paddle.x &&
+            p.x - p.width / 2 <= paddle.x + paddle.width;
+          if (caught) {
+            applyPowerUp(p.type);
+            p.done = true;
+          } else if (p.y - p.height / 2 > canvas.height) {
+            p.done = true;
+          }
+        }
+        powerUps = powerUps.filter((p) => !p.done);
+
+        // Expire the wide paddle when its timer runs out
+        if (effects.wideUntil && now >= effects.wideUntil) {
+          effects.wideUntil = 0;
+          setPaddleWidth(BASE_PADDLE_WIDTH);
+        }
+        if (effects.slowUntil && now >= effects.slowUntil) {
+          effects.slowUntil = 0;
+        }
+
+        updatePowerupHud();
+      }
+
+      function ballSpeedMultiplier() {
+        return effects.slowUntil > performance.now() ? 0.6 : 1;
+      }
+
       function update() {
         if (!gameRunning) return;
 
         if (keys.left && paddle.x > 0) {
-          paddle.x -= paddle.speed;
+          paddle.x = Math.max(0, paddle.x - paddle.speed);
         }
 
         if (keys.right && paddle.x + paddle.width < canvas.width) {
-          paddle.x += paddle.speed;
+          paddle.x = Math.min(canvas.width - paddle.width, paddle.x + paddle.speed);
         }
+
+        updatePowerUps();
 
         if (ball.stuck) {
           ball.x = paddle.x + paddle.width / 2;
@@ -276,8 +414,9 @@
           return;
         }
 
-        ball.x += ball.vx;
-        ball.y += ball.vy;
+        const speedMult = ballSpeedMultiplier();
+        ball.x += ball.vx * speedMult;
+        ball.y += ball.vy * speedMult;
 
         if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) {
           ball.vx *= -1;
@@ -312,6 +451,7 @@
             score += 10;
             updateHud();
             ball.vy *= -1;
+            maybeDropPowerUp(brick);
 
             if (bricks.every((item) => !item.alive)) {
               gameRunning = false;
@@ -338,15 +478,41 @@
       }
 
       function drawPaddle() {
-        ctx.fillStyle = '#f8fafc';
+        // Paddle glows green while the wide power-up is active
+        ctx.fillStyle = effects.wideUntil > performance.now() ? '#34d399' : '#f8fafc';
         ctx.fillRect(paddle.x, paddle.y, paddle.width, paddle.height);
       }
 
       function drawBall() {
-        ctx.fillStyle = '#fbbf24';
+        // Ball turns blue while the slow power-up is active
+        ctx.fillStyle = effects.slowUntil > performance.now() ? '#38bdf8' : '#fbbf24';
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
         ctx.fill();
+      }
+
+      function drawPowerUps() {
+        for (const p of powerUps) {
+          const info = POWERUP_TYPES[p.type];
+          const left = p.x - p.width / 2;
+          const top = p.y - p.height / 2;
+          const r = p.height / 2;
+
+          ctx.fillStyle = info.color;
+          ctx.beginPath();
+          ctx.moveTo(left + r, top);
+          ctx.arcTo(left + p.width, top, left + p.width, top + p.height, r);
+          ctx.arcTo(left + p.width, top + p.height, left, top + p.height, r);
+          ctx.arcTo(left, top + p.height, left, top, r);
+          ctx.arcTo(left, top, left + p.width, top, r);
+          ctx.fill();
+
+          ctx.fillStyle = '#0f172a';
+          ctx.font = 'bold 13px Arial';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(info.label, p.x, p.y + 1);
+        }
       }
 
       function draw() {
@@ -358,6 +524,7 @@
         }
 
         drawBricks();
+        drawPowerUps();
         drawPaddle();
         drawBall();
       }
